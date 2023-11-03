@@ -48,8 +48,8 @@ jumpy_image = pygame.image.load(r'C:\Users\DELL\Downloads\unicorn_1049948.png').
 bg_image = pygame.image.load(r'C:\Users\DELL\Downloads\i need.jpg').convert_alpha()
 platform_image = pygame.image.load(r'C:\Users\DELL\Desktop\platform.jpg').convert_alpha()
 #bird
-bird_sheet_img = pygame.image.load(r'C:\Users\DELL\Downloads\chick.png').convert_alpha()
-bird_sheet = SpriteSheet(bird_sheet_img)
+bird_img = pygame.image.load(r'C:\Users\DELL\Downloads\chick.png').convert_alpha()
+
 
 
 #function for outputting text onto the screen
@@ -68,8 +68,7 @@ def draw_panel():
 def draw_bg(bg_scroll):
     screen.blit(bg_image, (0, 0 + bg_scroll))
     screen.blit(bg_image, (0, -600 -bg_scroll))
-    
-#player class
+
 class Player():
     def __init__(self, x, y):
         self.image = pygame.transform.scale(jumpy_image,(45, 45))
@@ -107,7 +106,7 @@ class Player():
     
     
          #check collision with platforms
-        for platform in platform_group:
+        for platform in platform_image:
              #collision in the y direction
             if platform.rect.colliderect(self.rect.x, self.rect.y + dy, self.width, self.height):
                  #check if above the platforms
@@ -197,13 +196,14 @@ class Platform(pygame.sprite.Sprite):
 #player instance
 jumpy = Player(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 150)
 
-#create sprite groups 
-platform_group = pygame.sprite.GROUP()
-enemy_group = pygame.sprite.GROUP()
 
 #create starting platform
+platforms = [[175, 480, 70, False], [85, 370, 70, False], [265, 370, 70, False],
+             [175, 260, 70, False], [85, 150, 70, False], [265, 150, 70, False],
+             [175, 40, 70, False]]
+
 platform = Platform(SCREEN_WIDTH // 2 - 50, SCREEN_HEIGHT - 50, 100, False)
-platform_group.add(platform)
+platforms.append(platform)
 
 #game loop
 run = True
@@ -230,12 +230,17 @@ while run:
                 p_moving = True
             else:
                 p_moving = False
-            platform = Platform,(p_x, p_y, p_w, p_moving)
+            platform = Platform(p_x, p_y, p_w, p_moving)
             platform_group.add(platform)
         
         #update platforms
-        platform_group.update(scroll,)   
-        
+        for platform in platforms:
+            x, y, width, moving = platform
+            platform_rect = pygame.Rect(x, y, width, 10)
+            platform_rect.y += scroll
+            if moving:
+                platform_rect.x += 2  # Adjust the platform's horizontal position if it's moving
+             pygame.draw.rect(screen, WHITE, platform_rect)
         #generate enemies
         if len(enemy_group) == 0 and score > 1500:
             enemy = Enemy(SCREEN_WIDTH, 100, bird_sheet, 1.5)
@@ -252,17 +257,15 @@ while run:
         pygame.draw.line(screen, WHITE, (0, score - high_score + SCROLL_THRESH), (SCREEN_WIDTH, score - high_score + SCROLL_THRESH), 3)
         draw_text('HIGH SCORE', font_small, WHITE, SCREEN_WIDTH - 130, score - high_score + SCROLL_THRESH) 
         
-        #draw sprites
-        platform_group.draw(screen)
-        enemy_group.draw(screen)
-        jumpy.draw()
-    
+        
        #draw panel
         draw_panel()
         
         #check game over
+   
         if jumpy.rect.top > SCREEN_HEIGHT:
             game_over = True
+            
             #check for collision with enemies
             if pygame.sprite.spritecollide(jumpy, enemy_group, False):
                if pygame.sprite.spritecollide(jumpy, enemy_group, False, pygame.sprite.collide_mask):

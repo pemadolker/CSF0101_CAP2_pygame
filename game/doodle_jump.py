@@ -1,0 +1,206 @@
+import random
+import pygame
+
+class DoodleJumper:
+    def __init__(self):
+        pygame.init()
+        self.WIDTH = 400
+        self.HEIGHT = 500
+        self.screen = pygame.display.set_mode([self.WIDTH, self.HEIGHT])
+        pygame.display.set_caption("Doodle Jumper")
+        self.fps = 60
+        self.timer = pygame.time.Clock()
+
+        self.white = (255, 255, 255)
+        self.black = (0, 0, 0)
+        self.background = pygame.image.load(r'C:\Users\DELL\Downloads\i need.jpg').convert_alpha()
+
+        self.player = pygame.transform.scale(pygame.image.load(r'C:\Users\DELL\Downloads\unicorn_1049948.png'), (90, 70))
+        self.player_x = 170
+        self.player_y = 400
+        self.x_change = 0
+        self.player_speed = 3
+        self.game_over = False
+
+        self.font = pygame.font.Font("freesansbold.ttf", 16)
+
+        self.platforms = [[175, 480, 70, 10], [85, 370, 70, 10], [265, 370, 70, 10],
+                          [175, 260, 70, 10], [85, 150, 70, 10], [265, 150, 70, 10], [175, 40, 70, 10]]
+        self.platform_image = pygame.transform.scale(pygame.image.load(r'C:\Users\DELL\Desktop\platform.jpg'), (80, 10))
+        self.jump = False
+        self.y_change = 0
+        self.super_jumps = 2
+
+        self.score = 0
+        self.high_score = 0
+        self.score_last = 0
+        self.jump_last = 0
+        self.game_over = False
+         
+        def display_restart_button(self):
+             restart_button = pygame.Rect(150, 250, 100, 50)
+             pygame.draw.rect(self.screen, self.white, restart_button)
+             restart_text = self.font.render("Restart", True, self.black)
+             self.screen.blit(restart_text, (170, 265))
+             pygame.display.flip()
+
+             while True:
+                 for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                       self.running = False
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                      if restart_button.collidepoint(event.pos):
+                           self.reset_game()  # Restart the game
+                           return
+        
+    def home_page(self):
+        # Draw the background
+        background = self.white
+        self.screen.fill(self.black)
+
+        # Create a start button
+        start_button = pygame.Rect(150, 250, 100, 50)
+        pygame.draw.rect(self.screen, self.white, start_button)
+        start_text = self.font.render("Start", True, self.black)
+        self.screen.blit(start_text, (170, 265))
+
+        pygame.display.flip()
+
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.running = False
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if start_button.collidepoint(event.pos):
+                        self.game_state = "main_game"
+                        return
+
+            if self.game_state == "main_game":
+                break
+
+    def check_collisions(self):
+        for platform in self.platforms:
+            if platform[0] < self.player_x + 20 < platform[0] + platform[2] and self.player_y + 60 < platform[1] < self.player_y + 65 and self.y_change > 0:
+                return True
+        return False
+
+    def update_player(self):
+        jump_height = 10
+        gravity = 0.4
+        if self.jump:
+            self.y_change = -jump_height
+            self.jump = False
+        self.player_y += self.y_change
+        self.y_change += gravity
+
+    def update_platforms(self):
+        if self.player_y < 250 and self.y_change < 0:
+            for platform in self.platforms:
+                platform[1] -= self.y_change
+
+        for i in range(len(self.platforms)):
+            if self.platforms[i][1] > 500:
+                self.platforms[i] = [random.randint(10, 320), random.randint(-50, -10), 70, 10]
+                self.score += 1
+
+    def handle_events(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE and self.game_over:
+                    self.reset_game()
+                if event.key == pygame.K_SPACE and not self.game_over and self.super_jumps > 0:
+                    self.super_jumps -= 1
+                    self.y_change = -15
+                if event.key == pygame.K_RIGHT:
+                    self.x_change = -self.player_speed
+                if event.key == pygame.K_LEFT:
+                    self.x_change = self.player_speed
+            if event.type == pygame.KEYUP:
+                if event.key == pygame.K_RIGHT:
+                    self.x_change = 0
+                if event.key == pygame.K_LEFT:
+                    self.x_change = 0
+
+    def reset_game(self):
+        self.game_over = False
+        self.score = 0
+        self.player_x = 170
+        self.player_y = 400
+        self.background = self.white
+        self.score_last = 0
+        self.super_jumps = 2
+        self.jump_last = 0
+        self.platforms = [[175, 480, 70, 10], [85, 370, 70, 10], [265, 370, 70, 10], [175, 260, 70, 10],
+                          [85, 150, 70, 10], [265, 150, 70, 10], [175, 40, 70, 10]]
+
+    def update_game(self):
+        self.jump = self.check_collisions()
+        self.player_x += self.x_change
+
+        if self.player_y < 440:
+            self.update_player()
+        else:
+            self.game_over = True
+            self.y_change = 0
+
+        self.update_platforms()
+
+        if self.player_x < -20:
+            self.player_x = -20
+        elif self.player_x > 300:
+            self.player_x = 330
+
+        if self.score > self.high_score:
+            self.high_score = self.score
+
+        if self.score - self.score_last > 15:
+            self.score_last = self.score
+
+        if self.score - self.jump_last > 50:
+            self.jump_last = self.score
+            self.super_jumps += 1
+
+    def draw_game(self):
+        self.screen.blit(self.background, (0, 0)) 
+        self.screen.blit(self.player, (self.player_x, self.player_y))
+        for platform in self.platforms:
+           platform_x, platform_y, platform_width, platform_height = platform
+           self.screen.blit(self.platform_image, (platform_x, platform_y))
+
+
+        score_text = self.font.render('High Score: ' + str(self.high_score), True, self.black, self.white)
+        self.screen.blit(score_text, (280, 0))
+        high_score_text = self.font.render('Score: ' + str(self.score), True, self.black, self.white)
+        self.screen.blit(high_score_text, (320, 20))
+
+        if self.game_over:
+            game_over_text = self.font.render('Game Over: Spacebar to restart!', True, self.black, self.white)
+            self.screen.blit(game_over_text, (80, 80))
+
+        score_text = self.font.render('Air Jumps (Spacebar): ' + str(self.super_jumps), True, self.black, self.white)
+        self.screen.blit(score_text, (10, 10))
+
+        pygame.display.flip()
+
+    def run(self):
+        self.running = True
+        self.game_state = "home_page" 
+        while self.running:
+            self.timer.tick(self.fps)
+            if self.game_state == "home_page":
+                self.home_page()  
+            elif self.game_state == "main_game":
+                self.handle_events()
+                self.update_game()
+                self.draw_game()
+            elif self.game_state == "game_over":
+                if not self.game_over:
+                    self.game_over = True
+                    self.display_restart_button()  
+        pygame.quit()
+
+if __name__ == "__main__":
+    game = DoodleJumper()
+    game.run()
